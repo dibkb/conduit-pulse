@@ -1,6 +1,7 @@
 import { createStep, createWorkflow } from "@mastra/core/workflows";
 import { z } from "zod";
 import { redditSearchResultSchema, searchReddit } from "../../google-search";
+import { getRedditPostInfo } from "../../reddit-info";
 
 const inputSchema = z.object({
   productTitle: z
@@ -57,6 +58,8 @@ const googleSearchStep = createStep({
   }),
   execute: async ({ inputData }) => {
     const results = await searchReddit(inputData.outputValue);
+    const postInfo = await getRedditPostInfo(results[0].link);
+    console.log(postInfo);
     return {
       outputValue: results,
     };
