@@ -1,3 +1,6 @@
+import { z } from "zod";
+import { sentimentAgent } from "../mastra/agents/sentiment-agent";
+
 interface RedditPostInfo {
   title: string;
   content: string;
@@ -7,6 +10,7 @@ interface RedditPostInfo {
     author: string;
     body: string;
     score: number;
+    sentiment: string;
   }[];
 }
 
@@ -15,12 +19,6 @@ interface RedditTokenResponse {
   token_type: string;
   expires_in: number;
   scope: string;
-}
-
-interface RedditComment {
-  author: string;
-  body: string;
-  score: number;
 }
 
 interface RedditPost {
@@ -91,11 +89,31 @@ export async function getRedditPostInfo(
 
   const [postData, commentsData] = await postResponse.json();
   const post = postData.data.children[0].data as RedditPost;
-  const comments = commentsData.data.children.map((comment: any) => ({
-    author: comment.data.author,
-    body: comment.data.body,
-    score: comment.data.score,
-  }));
+
+  const comments = await Promise.all(
+    commentsData.data.children.map(async (comment: any) => {
+      const commentSentiment = await sentimentAgent.generate(
+        [
+          {
+            role: "user",
+            content: `Analyze the sentiment of the following reddit comment and return the sentiment as a string {positive, negative, neutral}: ${comment.data.body}`,
+          },
+        ],
+        {
+          output: z.object({
+            sentiment: z.string(),
+          }),
+        }
+      );
+
+      return {
+        author: comment.data.author,
+        body: comment.data.body,
+        score: comment.data.score,
+        sentiment: commentSentiment.object.sentiment,
+      };
+    })
+  );
 
   // Format the response
   const postInfo: RedditPostInfo = {

@@ -54,14 +54,40 @@ const googleSearchStep = createStep({
     outputValue: z.string().describe("The refined seo optimized search title"),
   }),
   outputSchema: z.object({
-    outputValue: z.array(redditSearchResultSchema),
+    outputValue: z.array(
+      z.object({
+        postInfo: z.object({
+          title: z.string(),
+          content: z.string(),
+          author: z.string(),
+          score: z.number(),
+          comments: z.array(
+            z.object({
+              author: z.string(),
+              body: z.string(),
+              score: z.number(),
+              sentiment: z.string(),
+            })
+          ),
+        }),
+        link: z.string(),
+      })
+    ),
   }),
   execute: async ({ inputData }) => {
     const results = await searchReddit(inputData.outputValue);
-    const postInfo = await getRedditPostInfo(results[0].link);
-    console.log(postInfo);
+    const postInfos = await Promise.all(
+      results.map(async (result) => {
+        const postInfo = await getRedditPostInfo(result.link);
+        return {
+          postInfo: postInfo,
+          link: result.link,
+        };
+      })
+    );
+
     return {
-      outputValue: results,
+      outputValue: postInfos,
     };
   },
 });
