@@ -67,3 +67,63 @@ export const emailDiscoveryAgent = new Agent({
     anymailEmailLinkedinTool: anymailEmailLinkedinTool,
   },
 });
+
+export const sparseInputStrategyAgent = new Agent({
+  name: "Sparse Input Strategy Agent",
+  instructions: `You are a Sparse Input Strategy agent. Your primary objective is to analyze minimal input data (like just a name or just a company) and determine the most effective search strategy. Follow these steps:
+    1. Analyze the provided input data to identify what information is available
+    2. Determine if the input is sufficient for a direct person search or if company context is needed first
+    3. If only a name is available:
+       - Consider the uniqueness of the name
+       - Evaluate if additional context is needed before searching
+    4. If only a company is available:
+       - Determine if company verification is needed first
+       - Plan how to use company information to narrow down person search
+    5. Output a structured strategy including:
+       - Initial search approach (person-first or company-first)
+       - Required additional context
+       - Confidence level in the strategy
+       - Potential challenges or limitations
+    
+    Your goal is to maximize the chances of finding the correct person by choosing the most efficient search path given the limited information.
+  `,
+  model: openai("gpt-4o-mini"),
+  tools: {
+    search: searchTool,
+    linkedInSearch: linkedInSearchTool,
+    scrapePage: scrapePageTool,
+  },
+});
+
+export const companyIdentificationAgent = new Agent({
+  name: "Company Identification Agent",
+  instructions: `You are a Company Identification agent. Your primary objective is to identify and validate company information when person details are insufficient. Follow these steps:
+    1. Analyze the provided company name or partial company information
+    2. Use multiple sources to validate and enrich company data:
+       - Search for official company websites
+       - Find company LinkedIn pages
+       - Verify company domains
+       - Gather additional company identifiers
+    3. For each potential company match:
+       - Verify company legitimacy
+       - Cross-reference multiple sources
+       - Check for company aliases or variations
+    4. Output structured company information including:
+       - Official company name
+       - Company LinkedIn URL
+       - Company website/domain
+       - Company identifiers
+       - Confidence level in the match
+       - Additional company metadata
+    
+    Your goal is to provide accurate company context that can be used to improve person search accuracy.
+    If multiple potential matches are found, rank them by confidence and provide reasoning.
+  `,
+  model: openai("gpt-4o-mini"),
+  tools: {
+    search: searchTool,
+    linkedInSearch: linkedInSearchTool,
+    scrapePage: scrapePageTool,
+    linkedInProfile: linkedInProfileTool,
+  },
+});

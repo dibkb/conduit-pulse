@@ -137,7 +137,7 @@ const step2cMinimalInfoStep = createStep({
   description: "Step 2C: Minimal Info / GPT-directed search strategy",
   inputSchema: LinkedInPerson,
   outputSchema: LinkedInPerson, // Output might include a strategy decision
-  execute: async ({ inputData }) => {
+  execute: async ({ inputData, mastra }) => {
     // Objective: To handle cases where minimal information (e.g., only a name or
     // only a company name) is available for the person. The core task is to use
     // GPT to analyze this sparse input and decide the most viable initial search
@@ -145,7 +145,29 @@ const step2cMinimalInfoStep = createStep({
     // and identify the company first to provide context for a subsequent, more
     // targeted person search. The output would be the input data, potentially
     // annotated with this strategic decision.
-    return inputData;
+    if (isFull(inputData)) {
+      return inputData;
+    }
+    const sparseInputStrategyAgent = mastra.getAgent(
+      "sparseInputStrategyAgent"
+    );
+    const response = await sparseInputStrategyAgent.generate(
+      [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Analyze the input data and decide the most viable initial search strategy: whether to first attempt a broad search for the person or to try and identify the company first to provide context for a subsequent, more targeted person search. Here are the full details ${inputData}`,
+            },
+          ],
+        },
+      ],
+      {
+        experimental_output: LinkedInPerson,
+      }
+    );
+    return response.object;
   },
 });
 
@@ -154,7 +176,7 @@ const step4CompanyIdFirstStep = createStep({
   description: "Step 4A: Company ID First (when person ID is not direct)",
   inputSchema: LinkedInPerson, // Input from step2cMinimalInfoStep
   outputSchema: LinkedInPerson, // Output includes any found company identifiers
-  execute: async ({ inputData }) => {
+  execute: async ({ inputData, mastra }) => {
     // Objective: To identify the company associated with the person, particularly when
     // the person's own details are insufficient for direct identification and identifying
     // the company first could provide necessary context. This step would use the input
@@ -162,7 +184,29 @@ const step4CompanyIdFirstStep = createStep({
     // (company search) or SerpAPI (to find an official website/domain or company
     // LinkedIn page). The output would be the LinkedInPerson object, updated with any
     // found company identifiers such as the company's LinkedIn URL or domain.
-    return inputData;
+    if (isFull(inputData)) {
+      return inputData;
+    }
+    const companyIdentificationAgent = mastra.getAgent(
+      "companyIdentificationAgent"
+    );
+    const response = await companyIdentificationAgent.generate(
+      [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Identify the company associated with the person ${inputData.full_name}. Here are the full details ${inputData}`,
+            },
+          ],
+        },
+      ],
+      {
+        experimental_output: LinkedInPerson,
+      }
+    );
+    return response.object;
   },
 });
 

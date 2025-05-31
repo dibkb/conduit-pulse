@@ -10,6 +10,8 @@ import {
   linkedinProfileUrlAgent,
   linkedinProfileAgent,
   emailDiscoveryAgent,
+  sparseInputStrategyAgent,
+  companyIdentificationAgent,
 } from "./agents/linkedin-profile-url";
 
 export const mastra = new Mastra({
@@ -24,6 +26,8 @@ export const mastra = new Mastra({
     companyEnrichmentAgent,
     linkedinProfileAgent,
     emailDiscoveryAgent,
+    sparseInputStrategyAgent,
+    companyIdentificationAgent,
   },
   logger: new PinoLogger({
     name: "Mastra",
