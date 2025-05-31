@@ -1,7 +1,16 @@
 import { createStep, createWorkflow } from "@mastra/core/workflows";
-import { LinkedInPerson } from "./type"; // Assuming LinkedInPerson is a Zod schema or type
+import { LinkedInPerson } from "./type";
+// Assuming LinkedInPerson is a Zod schema or type
 import { z } from "zod";
+import { mastra } from "..";
 
+function isFull(inputData: z.infer<typeof LinkedInPerson>): boolean {
+  return Object.values(inputData).every((value) => {
+    if (value === null || value === undefined) return false;
+    if (typeof value === "string") return value.trim().length > 0;
+    return true; // For non-string values, consider them present if they exist
+  });
+}
 export const prioritizeLinkedInStep = createStep({
   id: "prioritize-linkedin",
   description: "Prioritize the LinkedIn post", // The description seems slightly off from the step's role in the workflow
@@ -29,7 +38,7 @@ const step4CompanyDetailsStep = createStep({
     "step2c-workflow": LinkedInPerson,
   }),
   outputSchema: LinkedInPerson,
-  execute: async ({ inputData }) => {
+  execute: async ({ inputData, mastra }) => {
     // Objective: To gather and enrich comprehensive details about the identified company.
     // This step assumes a company has been at least partially identified (e.g., its name,
     // domain, or company LinkedIn URL is known, potentially from the output of
@@ -38,7 +47,39 @@ const step4CompanyDetailsStep = createStep({
     // or SerpAPI to find/verify the company's canonical name, official domain,
     // detailed description, industry, size, etc. The choice to use inputData["step2b-workflow"]
     // suggests that path is expected to yield more complete data for company enrichment.
-    return inputData["step2b-workflow"]; // Passes through data from a specific preceding workflow
+
+    const data = {
+      ...inputData["step2b-workflow"],
+      ...Object.fromEntries(
+        Object.entries(inputData["step2c-workflow"] || {}).filter(
+          ([_, value]) =>
+            value !== null &&
+            value !== undefined &&
+            value.toString().trim() !== ""
+        )
+      ),
+    };
+    if (isFull(data)) {
+      return data;
+    }
+    const companyEnrichmentAgent = mastra.getAgent("companyEnrichmentAgent");
+    const response = await companyEnrichmentAgent.generate(
+      [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Enrich the company details for the company ${data.company_name}. Here are the full details ${data}`,
+            },
+          ],
+        },
+      ],
+      {
+        experimental_output: LinkedInPerson,
+      }
+    );
+    return response.object;
   },
 });
 
@@ -47,13 +88,33 @@ const step5EmailDiscoveryStep = createStep({
   description: "Step 5: Email Discovery",
   inputSchema: LinkedInPerson, // Assumes LinkedInPerson now contains enriched person and company data
   outputSchema: LinkedInPerson,
-  execute: async ({ inputData }) => {
+  execute: async ({ inputData, mastra }) => {
     // Objective: To find a verified professional email address for the identified person.
     // This step relies on having accurately determined the person's first name, last name,
     // and the company's domain. It would utilize a specialized tool like AnymailFinder,
     // providing these details to discover the email. The found email address would then
     // be added to the LinkedInPerson data object.
-    return inputData;
+    if (inputData.email) {
+      return inputData;
+    }
+    const emailDiscoveryAgent = mastra.getAgent("emailDiscoveryAgent");
+    const response = await emailDiscoveryAgent.generate(
+      [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Find the email for the person ${inputData.full_name} who works at ${inputData.company_name}. Here are the full details ${inputData}`,
+            },
+          ],
+        },
+      ],
+      {
+        experimental_output: LinkedInPerson,
+      }
+    );
+    return response.object;
   },
 });
 
@@ -119,8 +180,9 @@ const step2bNameCompanyStep = createStep({
   id: "step-2-b-name-company",
   description: "Step 2B: Full Name & Company Name KNOWN",
   inputSchema: LinkedInPerson,
-  outputSchema: LinkedInPerson, // Output should ideally include a found person_linkedin_url
-  execute: async ({ inputData }) => {
+  outputSchema: LinkedInPerson,
+  // Output should ideally include a found person_linkedin_url
+  execute: async ({ inputData, mastra }) => {
     // Objective: To find the person's LinkedIn profile URL when their full name and
     // current company name are known. This step would primarily use Scrapin.io to
     // search for the person using these details. GPT would then be used to analyze
@@ -129,7 +191,29 @@ const step2bNameCompanyStep = createStep({
     // be to use SerpAPI for a broader Google search to locate the LinkedIn profile.
     // The 'dowhile' condition here seems like a placeholder; in a real scenario, it would
     // loop based on search success or retry attempts.
-    return inputData;
+    if (inputData.linkedin_url) {
+      return inputData;
+    }
+    const linkedinProfileUrlAgent = mastra.getAgent("linkedinProfileUrlAgent");
+
+    const response = await linkedinProfileUrlAgent.generate(
+      [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Find the LinkedIn profile URL for the person ${inputData.full_name} who works at ${inputData.company_name}. Here are the full details ${inputData}`,
+            },
+          ],
+        },
+      ],
+      {
+        experimental_output: LinkedInPerson,
+      }
+    );
+
+    return response.object;
   },
 });
 
@@ -138,14 +222,37 @@ const step2aLinkedInStep = createStep({
   description: "Step 2A: Person LinkedIn URL KNOWN (or found from 2B)",
   inputSchema: LinkedInPerson, // Assumes person_linkedin_url is now populated
   outputSchema: LinkedInPerson, // Output includes key details extracted from the profile
-  execute: async ({ inputData }) => {
+  execute: async ({ inputData, mastra }) => {
     // Objective: To use a known or recently discovered person_linkedin_url to fetch
     // initial key details directly from their LinkedIn profile. This step uses a tool
     // like Scrapin.io with the specific LinkedIn URL. GPT would then assist in
     // extracting critical information such as the person's verified full name, current
     // job title, current company name, and the URL of their current company's
     // LinkedIn page. This information populates the LinkedInPerson object.
-    return inputData;
+
+    if (isFull(inputData)) {
+      return inputData;
+    }
+
+    const linkedinProfileAgent = mastra.getAgent("linkedinProfileAgent");
+    const response = await linkedinProfileAgent.generate(
+      [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Find out about the person from the LinkedIn profile URL ${inputData.linkedin_url}. Here are the full details ${inputData}`,
+            },
+          ],
+        },
+      ],
+      {
+        experimental_output: LinkedInPerson,
+      }
+    );
+
+    return response.object;
   },
 });
 
@@ -163,6 +270,10 @@ const enrichLinkedInPersonStep = createStep({
     // recommendations, and any other publicly available information. GPT might assist
     // in parsing or structuring this extensive data. The LinkedInPerson object is
     // updated with this rich set of information.
+
+    if (isFull(inputData)) {
+      return inputData;
+    }
     return inputData;
   },
 });
@@ -172,11 +283,7 @@ export const step2bWorkflow = createWorkflow({
   inputSchema: LinkedInPerson,
   outputSchema: LinkedInPerson,
 })
-  .dowhile(
-    // The do-while condition needs a meaningful implementation for retries/success
-    step2bNameCompanyStep,
-    async ({ inputData }) => inputData.company_name === "step2bNameCompanyStep" // Placeholder condition
-  )
+  .then(step2bNameCompanyStep)
   .then(step2aLinkedInStep) // Uses the URL found in 2B
   .then(enrichLinkedInPersonStep) // Gets full details
   .commit();
