@@ -1,0 +1,110 @@
+Input:
+{
+  "full_name": "Rithwik Pattikonda",
+  "first_name": "Rithwik",
+  "last_name": "Pattikonda",
+  "title": "Founder",
+  "email": "",
+  "linkedin_url": "",
+  "company_name": "CardLift",
+  "company_domain": "",
+  "company_description": ""
+}
+
+Output:
+{
+  "full_name": "Rithwik Pattikonda",
+  "first_name": "Rithwik",
+  "last_name": "Pattikonda",
+  "title": "Founder",
+  "email": "rithwik@hireroger.com",
+  "linkedin_url": "https://www.linkedin.com/in/rithwikpattikonda",
+  "company_name": "CardLift",
+  "company_domain": "withcardlift.com",
+  "company_description": "CardLift is a platform that helps credit card issuers increase their cardholders' utilization rate by shifting spend from competitor cards and encouraging continued spend."
+}
+---------------------------------------------------------------------
+Input:
+
+{
+  "full_name": "Sriram Hariharan",
+  "first_name": "Sriram",
+  "last_name": "Hariharan",
+  "title": "Staff Engineer",
+  "email": "",
+  "linkedin_url": "",
+  "company_name": "",
+  "company_domain": "",
+  "company_description": ""
+}
+
+Output:
+
+{
+  "full_name": "Sriram Hariharan",
+  "first_name": "Sriram",
+  "last_name": "Hariharan",
+  "title": "Staff Engineer",
+  "email": "sriram.hariharan@ibotta.com",
+  "linkedin_url": "https://www.linkedin.com/in/sghsri",
+  "company_name": "Ibotta, Inc.",
+  "company_domain": "ibotta.com",
+  "company_description": "Ibotta, Inc. is an American mobile technology company headquartered in Denver, Colorado. Founded in 2011, the company offers cash back rewards on various purchases and is a leading performance marketing platform allowing brands to deliver digital promotions to over 200 million consumers."
+}
+
+------------------------------------------------------------------------
+Input:
+
+{
+  "full_name": "Ray Nirola",
+  "first_name": "Ray",
+  "last_name": "Nirola",
+  "title": "",
+  "email": "",
+  "linkedin_url": "https://www.linkedin.com/in/raynirola/",
+  "company_name": "",
+  "company_domain": "",
+  "company_description": ""
+}
+
+Output:
+
+{
+  "full_name": "Ray Nirola",
+  "first_name": "Ray",
+  "last_name": "Nirola",
+  "title": "VP of Engineering at Cardlift",
+  "email": "ray@withcardlift.com",
+  "linkedin_url": "https://www.linkedin.com/in/raynirola/",
+  "company_name": "CardLift",
+  "company_domain": "withcardlift.com",
+  "company_description": "CardLift is a comprehensive platform designed to help credit card issuers increase their cardholders' utilization rate and make their credit card program top of wallet for all online purchases."
+}
+------------------------------------------------------------------------
+Input:
+
+{
+  "full_name": "Neil Jain",
+  "first_name": "Neil",
+  "last_name": "Jain",
+  "title": "Security",
+  "email": "",
+  "linkedin_url": "",
+  "company_name": "Instrinsic",
+  "company_domain": "",
+  "company_description": ""
+}
+
+Output:
+
+{
+  "full_name": "Neil Jain",
+  "first_name": "Neil",
+  "last_name": "Jain",
+  "title": "Software Security Engineer at Intrinsic, an Alphabet company",
+  "email": "neiljain@intrinsic.ai",
+  "linkedin_url": "https://www.linkedin.com/in/neiljain56",
+  "company_name": "Intrinsic",
+  "company_domain": "intrinsic.ai",
+  "company_description": "Intrinsic is a robotics software and AI company at Alphabet. Our mission is to unlock the creative and economic potential of industrial robotics, making it accessible and usable for millions more businesses, entrepreneurs, and developers."
+}

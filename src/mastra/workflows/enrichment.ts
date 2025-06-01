@@ -1,8 +1,16 @@
 import { createStep, createWorkflow } from "@mastra/core/workflows";
-import { LinkedInPerson } from "./type";
+import { linkedInDummy, LinkedInPerson } from "./type";
 // Assuming LinkedInPerson is a Zod schema or type
 import { z } from "zod";
-import { mastra } from "..";
+import {
+  companyEnrichmentAgent,
+  companyIdentificationAgent,
+  emailDiscoveryAgent,
+  linkedinProfileAgent,
+  linkedinProfileUrlAgent,
+  sparseInputStrategyAgent,
+} from "../agents/linkedin-profile-url";
+import { cleanAndParseJson } from "../../utils/parse-data";
 
 function isFull(inputData: z.infer<typeof LinkedInPerson>): boolean {
   return Object.values(inputData).every((value) => {
@@ -24,7 +32,8 @@ export const prioritizeLinkedInStep = createStep({
     // GPT-directed strategy is needed due to minimal information. The output
     // would be the input data, possibly augmented with flags or decisions to guide
     // routing to the appropriate next step (e.g., Step 2A, 2B, or 2C logic).
-    return inputData;
+
+    return { ...linkedInDummy, ...inputData };
   },
 });
 
@@ -38,7 +47,7 @@ const step4CompanyDetailsStep = createStep({
     "step2c-workflow": LinkedInPerson,
   }),
   outputSchema: LinkedInPerson,
-  execute: async ({ inputData, mastra }) => {
+  execute: async ({ inputData }) => {
     // Objective: To gather and enrich comprehensive details about the identified company.
     // This step assumes a company has been at least partially identified (e.g., its name,
     // domain, or company LinkedIn URL is known, potentially from the output of
@@ -62,7 +71,6 @@ const step4CompanyDetailsStep = createStep({
     if (isFull(data)) {
       return data;
     }
-    const companyEnrichmentAgent = mastra.getAgent("companyEnrichmentAgent");
     const response = await companyEnrichmentAgent.generate(
       [
         {
@@ -70,7 +78,7 @@ const step4CompanyDetailsStep = createStep({
           content: [
             {
               type: "text",
-              text: `Enrich the company details for the company ${data.company_name}. Here are the full details ${data}`,
+              text: JSON.stringify(data),
             },
           ],
         },
@@ -79,7 +87,8 @@ const step4CompanyDetailsStep = createStep({
         experimental_output: LinkedInPerson,
       }
     );
-    return response.object;
+    const json = cleanAndParseJson(response.text);
+    return json;
   },
 });
 
@@ -88,7 +97,7 @@ const step5EmailDiscoveryStep = createStep({
   description: "Step 5: Email Discovery",
   inputSchema: LinkedInPerson, // Assumes LinkedInPerson now contains enriched person and company data
   outputSchema: LinkedInPerson,
-  execute: async ({ inputData, mastra }) => {
+  execute: async ({ inputData }) => {
     // Objective: To find a verified professional email address for the identified person.
     // This step relies on having accurately determined the person's first name, last name,
     // and the company's domain. It would utilize a specialized tool like AnymailFinder,
@@ -97,7 +106,6 @@ const step5EmailDiscoveryStep = createStep({
     if (inputData.email) {
       return inputData;
     }
-    const emailDiscoveryAgent = mastra.getAgent("emailDiscoveryAgent");
     const response = await emailDiscoveryAgent.generate(
       [
         {
@@ -105,7 +113,7 @@ const step5EmailDiscoveryStep = createStep({
           content: [
             {
               type: "text",
-              text: `Find the email for the person ${inputData.full_name} who works at ${inputData.company_name}. Here are the full details ${inputData}`,
+              text: JSON.stringify(inputData),
             },
           ],
         },
@@ -137,7 +145,7 @@ const step2cMinimalInfoStep = createStep({
   description: "Step 2C: Minimal Info / GPT-directed search strategy",
   inputSchema: LinkedInPerson,
   outputSchema: LinkedInPerson, // Output might include a strategy decision
-  execute: async ({ inputData, mastra }) => {
+  execute: async ({ inputData }) => {
     // Objective: To handle cases where minimal information (e.g., only a name or
     // only a company name) is available for the person. The core task is to use
     // GPT to analyze this sparse input and decide the most viable initial search
@@ -148,9 +156,6 @@ const step2cMinimalInfoStep = createStep({
     if (isFull(inputData)) {
       return inputData;
     }
-    const sparseInputStrategyAgent = mastra.getAgent(
-      "sparseInputStrategyAgent"
-    );
     const response = await sparseInputStrategyAgent.generate(
       [
         {
@@ -158,7 +163,7 @@ const step2cMinimalInfoStep = createStep({
           content: [
             {
               type: "text",
-              text: `Analyze the input data and decide the most viable initial search strategy: whether to first attempt a broad search for the person or to try and identify the company first to provide context for a subsequent, more targeted person search. Here are the full details ${inputData}`,
+              text: JSON.stringify(inputData),
             },
           ],
         },
@@ -167,7 +172,8 @@ const step2cMinimalInfoStep = createStep({
         experimental_output: LinkedInPerson,
       }
     );
-    return response.object;
+    const json = cleanAndParseJson(response.text);
+    return json;
   },
 });
 
@@ -187,9 +193,6 @@ const step4CompanyIdFirstStep = createStep({
     if (isFull(inputData)) {
       return inputData;
     }
-    const companyIdentificationAgent = mastra.getAgent(
-      "companyIdentificationAgent"
-    );
     const response = await companyIdentificationAgent.generate(
       [
         {
@@ -197,7 +200,7 @@ const step4CompanyIdFirstStep = createStep({
           content: [
             {
               type: "text",
-              text: `Identify the company associated with the person ${inputData.full_name}. Here are the full details ${inputData}`,
+              text: JSON.stringify(inputData),
             },
           ],
         },
@@ -206,7 +209,8 @@ const step4CompanyIdFirstStep = createStep({
         experimental_output: LinkedInPerson,
       }
     );
-    return response.object;
+    const json = cleanAndParseJson(response.text);
+    return json;
   },
 });
 
@@ -226,7 +230,7 @@ const step2bNameCompanyStep = createStep({
   inputSchema: LinkedInPerson,
   outputSchema: LinkedInPerson,
   // Output should ideally include a found person_linkedin_url
-  execute: async ({ inputData, mastra }) => {
+  execute: async ({ inputData }) => {
     // Objective: To find the person's LinkedIn profile URL when their full name and
     // current company name are known. This step would primarily use Scrapin.io to
     // search for the person using these details. GPT would then be used to analyze
@@ -238,7 +242,6 @@ const step2bNameCompanyStep = createStep({
     if (inputData.linkedin_url) {
       return inputData;
     }
-    const linkedinProfileUrlAgent = mastra.getAgent("linkedinProfileUrlAgent");
 
     const response = await linkedinProfileUrlAgent.generate(
       [
@@ -247,7 +250,7 @@ const step2bNameCompanyStep = createStep({
           content: [
             {
               type: "text",
-              text: `Find the LinkedIn profile URL for the person ${inputData.full_name} who works at ${inputData.company_name}. Here are the full details ${inputData}`,
+              text: JSON.stringify(inputData),
             },
           ],
         },
@@ -257,7 +260,8 @@ const step2bNameCompanyStep = createStep({
       }
     );
 
-    return response.object;
+    const json = cleanAndParseJson(response.text);
+    return json;
   },
 });
 
@@ -278,7 +282,6 @@ const step2aLinkedInStep = createStep({
       return inputData;
     }
 
-    const linkedinProfileAgent = mastra.getAgent("linkedinProfileAgent");
     const response = await linkedinProfileAgent.generate(
       [
         {
@@ -286,7 +289,7 @@ const step2aLinkedInStep = createStep({
           content: [
             {
               type: "text",
-              text: `Find out about the person from the LinkedIn profile URL ${inputData.linkedin_url}. Here are the full details ${inputData}`,
+              text: JSON.stringify(inputData),
             },
           ],
         },
@@ -295,30 +298,9 @@ const step2aLinkedInStep = createStep({
         experimental_output: LinkedInPerson,
       }
     );
-
-    return response.object;
-  },
-});
-
-const enrichLinkedInPersonStep = createStep({
-  id: "enrich-linkedin-person", // Corresponds to Step 3 in the ASCII diagram
-  description:
-    "Step 3: Enrich Full LinkedIn Person Profile (Assumes person_linkedin_url is confirmed)",
-  inputSchema: LinkedInPerson, // Input has a confirmed person_linkedin_url
-  outputSchema: LinkedInPerson, // Output is a more comprehensively filled LinkedInPerson object
-  execute: async ({ inputData }) => {
-    // Objective: To perform a comprehensive enrichment of the person's details using their
-    // confirmed LinkedIn URL. This step goes beyond initial key details and aims to
-    // fetch all available structured data from the profile via Scrapin.io. This
-    // includes details like full work experience history, education, skills,
-    // recommendations, and any other publicly available information. GPT might assist
-    // in parsing or structuring this extensive data. The LinkedInPerson object is
-    // updated with this rich set of information.
-
-    if (isFull(inputData)) {
-      return inputData;
-    }
-    return inputData;
+    console.log(response.text);
+    const json = cleanAndParseJson(response.text);
+    return json;
   },
 });
 
@@ -329,7 +311,6 @@ export const step2bWorkflow = createWorkflow({
 })
   .then(step2bNameCompanyStep)
   .then(step2aLinkedInStep) // Uses the URL found in 2B
-  .then(enrichLinkedInPersonStep) // Gets full details
   .commit();
 
 const enrichmentWorkflow = createWorkflow({

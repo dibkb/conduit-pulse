@@ -11,3 +11,15 @@ export const LinkedInPerson = z.object({
   company_domain: z.string().optional(),
   company_description: z.string().optional(),
 });
+
+export const linkedInDummy: z.infer<typeof LinkedInPerson> = {
+  full_name: undefined,
+  first_name: undefined,
+  last_name: undefined,
+  title: undefined,
+  email: undefined,
+  linkedin_url: undefined,
+  company_name: undefined,
+  company_domain: undefined,
+  company_description: undefined,
+};
