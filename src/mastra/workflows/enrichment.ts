@@ -10,7 +10,6 @@ import {
   linkedinProfileUrlAgent,
   sparseInputStrategyAgent,
 } from "../agents/linkedin-profile-url";
-import { cleanAndParseJson } from "../../utils/parse-data";
 
 function isFull(inputData: z.infer<typeof LinkedInPerson>): boolean {
   return Object.values(inputData).every((value) => {
@@ -25,14 +24,6 @@ export const prioritizeLinkedInStep = createStep({
   inputSchema: LinkedInPerson,
   outputSchema: LinkedInPerson,
   execute: async ({ inputData }) => {
-    // Objective: To analyze the input LinkedInPerson data to determine the most effective
-    // initial strategy for identifying or verifying the person's LinkedIn profile.
-    // This involves checking if a LinkedIn URL is already provided, if full name and
-    // company name are available for a targeted search, or if a broader,
-    // GPT-directed strategy is needed due to minimal information. The output
-    // would be the input data, possibly augmented with flags or decisions to guide
-    // routing to the appropriate next step (e.g., Step 2A, 2B, or 2C logic).
-
     return { ...linkedInDummy, ...inputData };
   },
 });
@@ -48,15 +39,6 @@ const step4CompanyDetailsStep = createStep({
   }),
   outputSchema: LinkedInPerson,
   execute: async ({ inputData }) => {
-    // Objective: To gather and enrich comprehensive details about the identified company.
-    // This step assumes a company has been at least partially identified (e.g., its name,
-    // domain, or company LinkedIn URL is known, potentially from the output of
-    // 'step2b-workflow' or 'step2c-workflow'). It would use tools like Scrapin.io
-    // (with a company LinkedIn URL), Scrapeowl (with a company domain to get descriptions),
-    // or SerpAPI to find/verify the company's canonical name, official domain,
-    // detailed description, industry, size, etc. The choice to use inputData["step2b-workflow"]
-    // suggests that path is expected to yield more complete data for company enrichment.
-
     const data = {
       ...inputData["step2b-workflow"],
       ...Object.fromEntries(
@@ -87,8 +69,7 @@ const step4CompanyDetailsStep = createStep({
         experimental_output: LinkedInPerson,
       }
     );
-    const json = cleanAndParseJson(response.text);
-    return json;
+    return response.object;
   },
 });
 
@@ -98,11 +79,6 @@ const step5EmailDiscoveryStep = createStep({
   inputSchema: LinkedInPerson, // Assumes LinkedInPerson now contains enriched person and company data
   outputSchema: LinkedInPerson,
   execute: async ({ inputData }) => {
-    // Objective: To find a verified professional email address for the identified person.
-    // This step relies on having accurately determined the person's first name, last name,
-    // and the company's domain. It would utilize a specialized tool like AnymailFinder,
-    // providing these details to discover the email. The found email address would then
-    // be added to the LinkedInPerson data object.
     if (inputData.email) {
       return inputData;
     }
@@ -146,13 +122,6 @@ const step2cMinimalInfoStep = createStep({
   inputSchema: LinkedInPerson,
   outputSchema: LinkedInPerson, // Output might include a strategy decision
   execute: async ({ inputData }) => {
-    // Objective: To handle cases where minimal information (e.g., only a name or
-    // only a company name) is available for the person. The core task is to use
-    // GPT to analyze this sparse input and decide the most viable initial search
-    // strategy: whether to first attempt a broad search for the person or to try
-    // and identify the company first to provide context for a subsequent, more
-    // targeted person search. The output would be the input data, potentially
-    // annotated with this strategic decision.
     if (isFull(inputData)) {
       return inputData;
     }
@@ -172,8 +141,7 @@ const step2cMinimalInfoStep = createStep({
         experimental_output: LinkedInPerson,
       }
     );
-    const json = cleanAndParseJson(response.text);
-    return json;
+    return response.object;
   },
 });
 
@@ -183,13 +151,6 @@ const step4CompanyIdFirstStep = createStep({
   inputSchema: LinkedInPerson, // Input from step2cMinimalInfoStep
   outputSchema: LinkedInPerson, // Output includes any found company identifiers
   execute: async ({ inputData, mastra }) => {
-    // Objective: To identify the company associated with the person, particularly when
-    // the person's own details are insufficient for direct identification and identifying
-    // the company first could provide necessary context. This step would use the input
-    // company name (if available from the CSV or inferred) with tools like Scrapin.io
-    // (company search) or SerpAPI (to find an official website/domain or company
-    // LinkedIn page). The output would be the LinkedInPerson object, updated with any
-    // found company identifiers such as the company's LinkedIn URL or domain.
     if (isFull(inputData)) {
       return inputData;
     }
@@ -209,8 +170,7 @@ const step4CompanyIdFirstStep = createStep({
         experimental_output: LinkedInPerson,
       }
     );
-    const json = cleanAndParseJson(response.text);
-    return json;
+    return response.object;
   },
 });
 
@@ -231,14 +191,6 @@ const step2bNameCompanyStep = createStep({
   outputSchema: LinkedInPerson,
   // Output should ideally include a found person_linkedin_url
   execute: async ({ inputData }) => {
-    // Objective: To find the person's LinkedIn profile URL when their full name and
-    // current company name are known. This step would primarily use Scrapin.io to
-    // search for the person using these details. GPT would then be used to analyze
-    // the search results and select the most accurate profile. If a strong match is
-    // not found via Scrapin.io, a secondary objective (or a subsequent step) would
-    // be to use SerpAPI for a broader Google search to locate the LinkedIn profile.
-    // The 'dowhile' condition here seems like a placeholder; in a real scenario, it would
-    // loop based on search success or retry attempts.
     if (inputData.linkedin_url) {
       return inputData;
     }
@@ -260,8 +212,7 @@ const step2bNameCompanyStep = createStep({
       }
     );
 
-    const json = cleanAndParseJson(response.text);
-    return json;
+    return response.object;
   },
 });
 
@@ -271,13 +222,6 @@ const step2aLinkedInStep = createStep({
   inputSchema: LinkedInPerson, // Assumes person_linkedin_url is now populated
   outputSchema: LinkedInPerson, // Output includes key details extracted from the profile
   execute: async ({ inputData, mastra }) => {
-    // Objective: To use a known or recently discovered person_linkedin_url to fetch
-    // initial key details directly from their LinkedIn profile. This step uses a tool
-    // like Scrapin.io with the specific LinkedIn URL. GPT would then assist in
-    // extracting critical information such as the person's verified full name, current
-    // job title, current company name, and the URL of their current company's
-    // LinkedIn page. This information populates the LinkedInPerson object.
-
     if (isFull(inputData)) {
       return inputData;
     }
@@ -298,9 +242,7 @@ const step2aLinkedInStep = createStep({
         experimental_output: LinkedInPerson,
       }
     );
-    console.log(response.text);
-    const json = cleanAndParseJson(response.text);
-    return json;
+    return response.object;
   },
 });
 

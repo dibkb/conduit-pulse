@@ -10,20 +10,6 @@ export const linkedinProfileUrlAgent = new Agent({
   name: "Linkedin Profile URL Agent",
   instructions: `You are a LinkedIn profile URL agent. Your primary objective is to find the most accurate LinkedIn profile URL for a person given their information.
 
-  Input/Output Format:
-  You will receive and must return a JSON object with the following structure:
-  {
-    "full_name": "string",
-    "first_name": "string",
-    "last_name": "string",
-    "title": "string",
-    "email": "string",
-    "linkedin_url": "string",
-    "company_name": "string",
-    "company_domain": "string",
-    "company_description": "string"
-  }
-
   Rules:
   1. Keep all existing non-empty values unchanged
   2. Only populate fields that are empty ("")
@@ -48,20 +34,6 @@ export const linkedinProfileUrlAgent = new Agent({
 export const linkedinProfileAgent = new Agent({
   name: "Linkedin Profile Agent",
   instructions: `You are a LinkedIn profile agent. Your primary objective is to enrich person information from their LinkedIn profile.
-
-  Input/Output Format:
-  You will receive and must return a JSON object with the following structure:
-  {
-    "full_name": "string",
-    "first_name": "string",
-    "last_name": "string",
-    "title": "string",
-    "email": "string",
-    "linkedin_url": "string",
-    "company_name": "string",
-    "company_domain": "string",
-    "company_description": "string"
-  }
 
   Rules:
   1. Keep all existing non-empty values unchanged
@@ -88,20 +60,6 @@ export const companyEnrichmentAgent = new Agent({
   name: "Company Enrichment Agent",
   instructions: `You are a Company Enrichment agent. Your primary objective is to enrich company information from various sources.
 
-  Input/Output Format:
-  You will receive and must return a JSON object with the following structure:
-  {
-    "full_name": "string",
-    "first_name": "string",
-    "last_name": "string",
-    "title": "string",
-    "email": "string",
-    "linkedin_url": "string",
-    "company_name": "string",
-    "company_domain": "string",
-    "company_description": "string"
-  }
-
   Rules:
   1. Keep all existing non-empty values unchanged
   2. Only populate fields that are empty ("")
@@ -127,20 +85,6 @@ export const emailDiscoveryAgent = new Agent({
   name: "Email Discovery Agent",
   instructions: `You are an Email Discovery agent. Your primary objective is to find and verify email addresses.
 
-  Input/Output Format:
-  You will receive and must return a JSON object with the following structure:
-  {
-    "full_name": "string",
-    "first_name": "string",
-    "last_name": "string",
-    "title": "string",
-    "email": "string",
-    "linkedin_url": "string",
-    "company_name": "string",
-    "company_domain": "string",
-    "company_description": "string"
-  }
-
   Rules:
   1. Keep all existing non-empty values unchanged
   2. Only populate fields that are empty ("")
@@ -165,20 +109,6 @@ export const emailDiscoveryAgent = new Agent({
 export const sparseInputStrategyAgent = new Agent({
   name: "Sparse Input Strategy Agent",
   instructions: `You are a Sparse Input Strategy agent. Your primary objective is to maximize information discovery from minimal input.
-
-  Input/Output Format:
-  You will receive and must return a JSON object with the following structure:
-  {
-    "full_name": "string",
-    "first_name": "string",
-    "last_name": "string",
-    "title": "string",
-    "email": "string",
-    "linkedin_url": "string",
-    "company_name": "string",
-    "company_domain": "string",
-    "company_description": "string"
-  }
 
   Rules:
   1. Keep all existing non-empty values unchanged
@@ -206,20 +136,6 @@ export const sparseInputStrategyAgent = new Agent({
 export const companyIdentificationAgent = new Agent({
   name: "Company Identification Agent",
   instructions: `You are a Company Identification agent. Your primary objective is to identify and validate company information.
-
-  Input/Output Format:
-  You will receive and must return a JSON object with the following structure:
-  {
-    "full_name": "string",
-    "first_name": "string",
-    "last_name": "string",
-    "title": "string",
-    "email": "string",
-    "linkedin_url": "string",
-    "company_name": "string",
-    "company_domain": "string",
-    "company_description": "string"
-  }
 
   Rules:
   1. Keep all existing non-empty values unchanged
