@@ -38,7 +38,7 @@ export const linkedinProfileUrlAgent = new Agent({
   4. Return the complete object with any new information found
   `,
 
-  model: openai("gpt-4o-mini"),
+  model: openai("gpt-4-turbo"),
   tools: {
     search: searchTool,
     linkedInSearch: linkedInSearchTool,
@@ -77,7 +77,7 @@ export const linkedinProfileAgent = new Agent({
   4. Return the complete object with any new information found
   `,
 
-  model: openai("gpt-4o-mini"),
+  model: openai("gpt-4-turbo"),
   tools: {
     search: searchTool,
     linkedInProfile: linkedInProfileTool,
@@ -116,7 +116,7 @@ export const companyEnrichmentAgent = new Agent({
   4. Return the complete object with any new information found
   `,
 
-  model: openai("gpt-4o-mini"),
+  model: openai("gpt-4-turbo"),
   tools: {
     search: searchTool,
     scrapePage: scrapePageTool,
@@ -155,7 +155,7 @@ export const emailDiscoveryAgent = new Agent({
   4. Return the complete object with any new information found
   `,
 
-  model: openai("gpt-4o-mini"),
+  model: openai("gpt-4-turbo"),
   tools: {
     anymailEmailTool: anymailEmailTool,
     anymailEmailLinkedinTool: anymailEmailLinkedinTool,
@@ -195,7 +195,7 @@ export const sparseInputStrategyAgent = new Agent({
   5. Return the complete object with any new information found
   `,
 
-  model: openai("gpt-4o-mini"),
+  model: openai("gpt-4-turbo"),
   tools: {
     search: searchTool,
     linkedInSearch: linkedInSearchTool,
@@ -235,7 +235,7 @@ export const companyIdentificationAgent = new Agent({
   4. Return the complete object with any new information found
   `,
 
-  model: openai("gpt-4o-mini"),
+  model: openai("gpt-4-turbo"),
   tools: {
     search: searchTool,
     linkedInSearch: linkedInSearchTool,
